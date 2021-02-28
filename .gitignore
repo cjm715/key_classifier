@@ -1,0 +1,15 @@
+.ipynb_checkpoints
+articles
+data
+output
+.env
+docs
+trainer/scratch
+__pycache__
+scratch*
+.vscode
+*.png
+app/test_files
+*.h5
+*.wav
+*.mp3
