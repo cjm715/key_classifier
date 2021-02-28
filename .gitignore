@@ -13,3 +13,4 @@ test_files
 *.wav
 *.mp3
 trainer/model.h5
+key_classifier.pem
