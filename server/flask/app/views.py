@@ -31,7 +31,7 @@ def predict_file():
     """
 
     audio_file = request.files.get('file')
-    file_name = PARENT_FOLDER + 'temp/'+str(random.randint(0,10000000))
+    file_name = PARENT_FOLDER +str(random.randint(0,10000000))
     audio_file.save(file_name)
 
     probs, predicted_key = kss.predict(file_name)
