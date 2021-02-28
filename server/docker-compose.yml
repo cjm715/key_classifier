@@ -1,0 +1,21 @@
+version: "3"
+services:
+  flask:
+    build: 
+      context: ./flask
+      dockerfile: Dockerfile
+    container_name: flask
+    restart: always
+    environment:
+      - APP_NAME=MyFlaskApp
+    ports:
+      - "900:900"
+
+  nginx:
+    build: 
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "90:1234"
+    container_name: nginx
+    restart: always
