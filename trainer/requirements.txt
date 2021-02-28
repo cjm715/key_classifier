@@ -1,0 +1,17 @@
+numpy
+matplotlib
+pandas
+seaborn
+keras
+scikit-learn
+python-dotenv
+jupyter
+spotipy
+librosa
+music21
+midi2audio
+madmom
+tqdm
+tensorflow_datasets
+pyaudio
+tensorflowjs

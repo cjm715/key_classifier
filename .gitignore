@@ -9,7 +9,8 @@ __pycache__
 scratch*
 .vscode
 *.png
-app/test_files
+test_files
 *.h5
 *.wav
 *.mp3
+trainer/model.h5
