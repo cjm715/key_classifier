@@ -16,6 +16,6 @@ services:
       context: ./nginx
       dockerfile: Dockerfile
     ports:
-      - "90:1234"
+      - "80:1234"
     container_name: nginx
     restart: always
