@@ -14,3 +14,4 @@ test_files
 *.mp3
 trainer/model.h5
 key_classifier.pem
+client.py
