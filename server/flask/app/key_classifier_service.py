@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 import flasgger
 from flasgger import Swagger
@@ -6,9 +5,6 @@ import random
 import os
 import tensorflow.keras as keras
 import librosa
-import numpy as np
-import pyaudio
-import wave
 import tensorflow as tf
 
 
