@@ -8,7 +8,7 @@ import librosa
 import tensorflow as tf
 
 
-PARENT_FOLDER = '/app/'
+PARENT_FOLDER = ''
 MODEL_PATH = PARENT_FOLDER + 'model.h5'
 tf.config.set_visible_devices([], 'GPU')
 

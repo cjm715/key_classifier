@@ -5,7 +5,7 @@ from app.key_classifier_service import KeyClassifierService
 import random
 import os
 
-PARENT_FOLDER = '/app/'
+PARENT_FOLDER = ''
 
 # log_file = open(PARENT_FOLDER + "temp/log.txt", "a")
 # log_file.write(f"logging...\n")
