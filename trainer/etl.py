@@ -8,6 +8,7 @@ from glob import glob
 import pandas as pd
 from tqdm import tqdm
 import shutil
+from sklearn.model_selection import train_test_split
 
 DATA_PATH = 'data/'
 SAMPLE_RATE = 22050
@@ -28,14 +29,14 @@ LMD_KEY_HOLDOUT_DATASET = DATA_PATH + 'keys/lmd_key_test.tsv'
 LMD_AUDIO_DATASET = DATA_PATH + 'lmd_matched_mp3/'
 
 # output 
-MODEL_DATA_PATH = DATA_PATH + 'model_data/'
+MODEL_DATA_PATH = DATA_PATH + 'model_data_new/'
 METADATA_FILE = MODEL_DATA_PATH + 'metadata.csv'
 
 # removes all model data
 shutil.rmtree(MODEL_DATA_PATH)
 
 # creates folder structure
-data_source_list = ['gtzan', 'lmd']
+data_source_list = ['gtzan', 'lmd', 'mtg']
 subset_list = ['train', 'val', 'holdout', 'test']
 folders_to_create = [
     MODEL_DATA_PATH + f'{data_source}_{subset}'
@@ -43,6 +44,7 @@ folders_to_create = [
     for subset in subset_list]
 for folder in folders_to_create:
     os.makedirs(folder)
+
 
 KEY_ID_TO_KEY_SYMBOL_MAP = {
     0:  'A',
@@ -73,34 +75,75 @@ KEY_ID_TO_KEY_SYMBOL_MAP = {
 
 KEY_SYMBOL_TO_KEY_ID_MAP = {
     'A'   : 0,
+    'A#'  : 1,
     'Bb'  : 1,
     'B'   : 2,
     'C'   : 3,
     'C#'  : 4,
     'Db'  : 4, # duplicate key_id: Db == C#
-    'D'   : 5,  
+    'D'   : 5,
+    'D#'  : 5,
     'Eb'  : 6,
     'E'   : 7,
     'F'   : 8,
     'F#'  : 9,
+    'Gb'  : 9,
     'G'   : 10,
     'G#'  : 11,
     'Ab'  : 11, # duplicate key_id: Ab == G#
     'Am'  : 12,
+    'A#m' : 13,
     'Bbm' : 13,
     'Bm'  : 14,
     'Cm'  : 15,
     'C#m' : 16,
     'Dbm' : 16, # duplicate key_id: Db == C#
     'Dm'  : 17,
+    'D#m' : 18,
     'Ebm' : 18,
     'Em'  : 19,
     'Fm'  : 20,
     'F#m' : 21,
+    'Gbm' : 21,
     'Gm'  : 22,
     'G#m' : 23,
-    'Abm' : 23 # duplicate key_id: Ab == G#
+    'Abm' : 23, # duplicate key_id: Ab == G#
+    'A major' : 0,
+    'A# major' : 1,
+    'Bb major' : 1,
+    'B major': 2,
+    'C major' : 3,
+    'C# major' : 4,
+    'Db major' : 4,
+    'D major' : 5,
+    'D# major' : 6,
+    'Eb major' : 6,
+    'E major' : 7,
+    'F major' : 8,
+    'F# major' : 9,
+    'Gb major' : 9,
+    'G major' : 10,
+    'G# major' : 11,
+    'Ab major' : 11,
+    'A minor' : 12,
+    'A# minor' : 13,
+    'Bb minor' : 13,
+    'B minor': 14,
+    'C minor' : 15,
+    'C# minor' : 16,
+    'Db minor' : 16,
+    'D minor' : 17,
+    'D# minor' : 18,
+    'Eb minor' : 18,
+    'E minor' : 19,
+    'F minor' : 20,
+    'F# minor' : 21,
+    'Gb minor' : 21,
+    'G minor' : 22,
+    'G# minor' : 23,
+    'Ab minor' : 23
 }
+
 
 def get_cqt(audio_file_path):
     try:
@@ -199,7 +242,10 @@ def save_cqt_gtzan():
         data['subset'].append(subset)
         data['genre'].append(genre)
 
-    return pd.DataFrame(data)
+    df = pd.DataFrame(data)
+    df['source'] = 'gtzan'
+
+    return df
 
 
 def get_lmd_file_id(y):
@@ -266,14 +312,98 @@ def save_cqt_lmd():
 
             print(f"\naudio: {audio_file_path} cqt: {cqt_file_path}, key_id: {key_id}, key: {key}\n")
 
-    return pd.DataFrame(data)
+    df = pd.DataFrame(data)
+    df['source'] = 'lmd'
 
+    return df
+
+def save_cqt_mtg():
+    
+    mtg_dataset_path = 'data/giantsteps-mtg-key-dataset/'
+    mtg_metadata_path = mtg_dataset_path + 'annotations/beatport_metadata.txt'
+
+    df = pd.read_csv(mtg_metadata_path, sep = '\t')
+    df = df.rename(columns = {
+        'ID' : 'id',
+        'ARTIST' : 'artist' , 
+        'SONG TITLE' : 'title',
+        'MIX' : 'mix',
+        'LABEL' : 'label',
+        'BP GENRE' : 'genre',
+        'BP BPM' : 'bpm',
+        'BP KEY' : 'key'})
+
+    
+
+    df['key_id'] = df.apply(lambda x: KEY_SYMBOL_TO_KEY_ID_MAP[x['key']], axis = 1)
+    df['key'] = df.apply(lambda x: KEY_ID_TO_KEY_SYMBOL_MAP[x['key_id']], axis = 1)
+    df['audio_file_path'] = df.apply(lambda x: mtg_dataset_path + 'audio/' + str(x['id']) + '.LOFI.mp3', axis= 1)
+
+    train_size = 0.75
+    val_size = 0.1
+    test_size = 0.05
+    holdout_size = 0.1
+
+    all_ids = list(df['id'])
+
+    trainvaltest_id, holdout_id = train_test_split(
+        all_ids, 
+        test_size = holdout_size, 
+        random_state = 0)
+
+    trainval_id, test_id = train_test_split(
+        trainvaltest_id, 
+        test_size = test_size/ (train_size + val_size + test_size), 
+        random_state = 0)
+
+    train_id, val_id = train_test_split(
+        trainval_id, 
+        test_size = val_size/ (train_size + val_size), 
+        random_state = 0)
+
+    def assign_subset(id_num):
+        if id_num in train_id:
+            return 'train'
+        elif id_num in val_id:
+            return 'val'
+        elif id_num in test_id:
+            return 'test'
+        elif id_num in holdout_id:
+            return 'holdout'
+        else:
+            return None
+        
+    df['subset'] = df.apply(lambda x: assign_subset(x['id']), axis = 1)
+
+    df['cqt_file_path'] =  ''
+    file_num = 0
+    for idx in df.index:
+        # calcualte contant-q transform
+        audio_file_path = df.loc[idx, 'audio_file_path']
+        subset = df.loc[idx, 'subset']
+        key_id = df.loc[idx, 'key_id']
+
+        cqt = get_cqt(audio_file_path)
+
+        cqt_file_path = MODEL_DATA_PATH + f'mtg_{subset}/{file_num}_{key_id}.npy'
+        file_num += 1
+
+        if cqt is None:
+            df.loc[idx, 'cqt_file_path'] = None
+        elif cqt.shape[1] < MIN_TIME_STEPS:
+            df.loc[idx, 'cqt_file_path'] = None
+        else:
+            df.loc[idx, 'cqt_file_path'] = cqt_file_path
+
+        np.save(cqt_file_path, cqt)
+
+    df = df.dropna()
+
+    return df
 
 df_gtzan = save_cqt_gtzan()
-df_gtzan['source'] = 'gtzan'
-
 df_lmd = save_cqt_lmd()
-df_lmd['source'] = 'lmd'
+df_mtg = save_cqt_mtg()
 
-df = pd.concat([df_gtzan,df_lmd])
+df = pd.concat([df_gtzan,df_lmd, df_mtg])
 df.to_csv(METADATA_FILE, index=False)
