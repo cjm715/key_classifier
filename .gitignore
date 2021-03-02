@@ -12,6 +12,6 @@ scratch*
 test_files
 *.wav
 *.mp3
-trainer/model.h5
+trainer/*.h5
 key_classifier.pem
 client.py
