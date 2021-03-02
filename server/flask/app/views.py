@@ -17,6 +17,7 @@ def index():
     return 'Hello from flask'
 
 @app.route('/predict_file', methods = ["POST"])
+@cross_origin(origin='https://cjm715.github.io/',headers=['Content- Type','Authorization'])
 def predict_file():
     """Let's make a prediction on a file.
     ---

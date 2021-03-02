@@ -69,10 +69,9 @@ if __name__ == "__main__":
 
     input_shape = (168, None, 1)
 
-    SAVED_MODEL_PATH = 'model.h5'
-    #tfjs_target_dir = 'tfjs_model/'
-    model = keras.models.load_model(SAVED_MODEL_PATH)
-    #model = build_model(input_shape, complexity=2)
+    SAVED_MODEL_PATH = 'model_large.h5'
+    #model = keras.models.load_model(SAVED_MODEL_PATH)
+    model = build_model(input_shape, complexity=20)
 
     optimizer = keras.optimizers.Adam(learning_rate = 0.0001)
     model.compile(

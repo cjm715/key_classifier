@@ -82,7 +82,7 @@ KEY_SYMBOL_TO_KEY_ID_MAP = {
     'C#'  : 4,
     'Db'  : 4, # duplicate key_id: Db == C#
     'D'   : 5,
-    'D#'  : 5,
+    'D#'  : 6,
     'Eb'  : 6,
     'E'   : 7,
     'F'   : 8,
@@ -398,12 +398,12 @@ def save_cqt_mtg():
         np.save(cqt_file_path, cqt)
 
     df = df.dropna()
+    df['source'] = 'mtg'
 
     return df
 
-df_gtzan = save_cqt_gtzan()
-df_lmd = save_cqt_lmd()
-df_mtg = save_cqt_mtg()
+# df_gtzan = save_cqt_gtzan()
+# df_lmd = save_cqt_lmd()
 
-df = pd.concat([df_gtzan,df_lmd, df_mtg])
-df.to_csv(METADATA_FILE, index=False)
+df_mtg = save_cqt_mtg()
+df_mtg.to_csv(METADATA_FILE, index=False)
