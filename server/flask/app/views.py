@@ -1,5 +1,6 @@
 from app import app
 from flask import Flask, request, jsonify
+from flask_cors import CORS, cross_origin
 from flasgger import Swagger
 from app.key_classifier_service import KeyClassifierService
 import random
