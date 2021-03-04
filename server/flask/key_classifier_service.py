@@ -9,7 +9,7 @@ import tensorflow as tf
 
 
 PARENT_FOLDER = ''
-MODEL_PATH = PARENT_FOLDER + 'model.h5'
+MODEL_PATH = PARENT_FOLDER + 'static/model.h5'
 tf.config.set_visible_devices([], 'GPU')
 
 class KeyClassifierService:
