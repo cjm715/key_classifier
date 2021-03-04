@@ -51,7 +51,7 @@ navigator.mediaDevices.getUserMedia(constraintObj)
 
         $.ajax({
             type: 'POST',
-            url: 'http://18.144.173.139/predict_file',
+            url: 'http://audiokey.net/predict_file',
             data: form_data,
             contentType: false,
             cache: false,
