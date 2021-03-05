@@ -21,4 +21,4 @@ services:
     container_name: nginx
     restart: always
     volumes:
-      - ~/certs:/etc/nginx/certs
+      - /home/ubuntu/certs:/etc/nginx/certs
