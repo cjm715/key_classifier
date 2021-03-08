@@ -33,6 +33,7 @@ if (navigator.mediaDevices === undefined) {
     })
 }
 
+
 navigator.mediaDevices.getUserMedia(constraintObj)
 .then(function(mediaStreamObj) {
     //add listeners for saving video/audio
