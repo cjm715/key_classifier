@@ -1,11 +1,12 @@
 
 <head>
 
-    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    
-    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
-    <meta content="utf-8" http-equiv="encoding">
-    
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AudioKey</title>
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <!-- <link rel="stylesheet" href="jquery.com/ui/1.8.10/themes/smoothness/jquery-ui.css" type="text/css">
     <script type="text/javascript" src="//ajax.aspnetcdn.com/ajax/jquery.ui/1.8.10/jquery-ui.min.js"></script> -->
@@ -14,28 +15,47 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.3/p5.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.3/addons/p5.dom.js"></script>
     <script language="javascript" src="https://cdn.jsdelivr.net/npm/p5@1.2.0/lib/addons/p5.sound.min.js"></script>
-
+    <link rel="stylesheet" href="static/css/main.css">
 </head>
 <body>
+<header>
+    <div class = 'logo' >
+        <a href='#'> 
+            <img src="static/images/audiokey.svg">
+        </a>
+    </div>
+    <div class = 'nav'>
+        <a href = '#'>Home</a>
+        <a href = '#'>About</a>
+    </div>
+</header>
 
-<img src="static/audiokey.svg">
+<div class='results_display'>
+    <div id='p5sketch'>
 
-<h1>Musical key classifier</h1>
-
-<p>Welcome to the musical key classifier app. </p>
-
-
-<div id='keyClassifierDiv'>
-<!--  class='simulation_post'> -->
+    </div>
+    <div id = 'statusDiv'>
+        Record music to determine key by pressing mic icon and submitting.
+    </div>
 </div>
 
-<p><button id="btnStart">START RECORDING</button><br/>
-<button id="btnStop">STOP RECORDING</button><br/>
-<audio id="audioPlayer" controls></audio><br/>
-<button id="btnSubmit">SUBMIT</button></p>
+<div class = 'player'>
+    <div class="top_row">
+        <div class = 'player_button'>
+            <!-- <button id="record">START</button> -->
+            <img src = 'static/images/mic.svg' id ='mic_rec'>
+        </div>
+        <div class="player_button">
+            <!-- <button id="btnSubmit">SUBMIT</button> -->
+            <img src = 'static/images/send.svg' id = 'submit'>
+        </div>
+    </div>
+    <div class="bottom_row">
+        <audio id="audioPlayer" controls></audio>
+    </div>
+</div>
 
-<div id='key'></div>
 
-<script src="static/key_classifier.js"></script>
+<script src="static/js/key_classifier.js"></script>
 
 </body>

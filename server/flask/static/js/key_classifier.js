@@ -36,13 +36,13 @@ if (navigator.mediaDevices === undefined) {
 navigator.mediaDevices.getUserMedia(constraintObj)
 .then(function(mediaStreamObj) {
     //add listeners for saving video/audio
-    let start = document.getElementById('btnStart');
-    let stop = document.getElementById('btnStop');
+    let mic_rec = document.getElementById('mic_rec');
+    let submit = document.getElementById('submit');
     let audioSave = document.getElementById('audioPlayer');
-    let submit = document.getElementById('btnSubmit');
-    let keyDiv = document.getElementById('key')
+    let statusDiv = document.getElementById('statusDiv')
     let mediaRecorder = new MediaRecorder(mediaStreamObj);
     let chunks = [];
+    var recording = false;
     let blob = new Blob();
     
     uploadBlob = function(){
@@ -60,21 +60,29 @@ navigator.mediaDevices.getUserMedia(constraintObj)
                 console.log('Success!');
                 let key = data.key
                 let prob = data.probabilities[data.key]
-                keyDiv.innerHTML = "The key is ".concat(data.key).concat(' with probability ').concat(prob);
+                statusDiv.innerHTML = "The key is ".concat(data.key).concat(' with probability ').concat(prob);
                 api_data = data;
             },
         })
     }
 
-    start.addEventListener('click', (ev)=>{
-        mediaRecorder.start();
+    mic_rec.addEventListener('click', (ev)=>{
+        if (recording){
+            mediaRecorder.stop();
+            recording = false
+            mic_rec.src = 'static/images/mic.svg'
+            statusDiv.innerHTML = "Finished recording. Play recording below. If you are happy with the recording, submit to determine key."
+        } else {
+            mediaRecorder.start();
+            recording = true
+            mic_rec.src = 'static/images/record.svg'
+            statusDiv.innerHTML = "recording ... (Stop by clicking button again)"
+        }
+
         console.log(mediaRecorder.state);
     })
-    stop.addEventListener('click', (ev)=>{
-        mediaRecorder.stop();
-        console.log(mediaRecorder.state);
-    });
     submit.addEventListener('click', (ev)=>{
+        statusDiv.innerHTML = "processing ..."
         uploadBlob()
     });
 
@@ -86,7 +94,6 @@ navigator.mediaDevices.getUserMedia(constraintObj)
         chunks = [];
         let audioURL = window.URL.createObjectURL(blob);
 
-
         audioSave.src = audioURL;
     }
 })
@@ -95,21 +102,21 @@ navigator.mediaDevices.getUserMedia(constraintObj)
 });
 
 
-// P5JS sketch for visualizing output from API
-let key_classifier = function(p){
+// // P5JS sketch for visualizing output from API
+// let key_classifier = function(p){
 
-    p.setup = function() {
-        let cnv = p.createCanvas(300, 300);
-    }
+//     p.setup = function() {
+//         let cnv = p.createCanvas(300, 300);
+//     }
 
-    p.draw = function() {
-        p.background(255)
-        if (api_data){
-            p.textSize(32);
-            p.text(api_data.key, 10, 30);
-        }
-    }
+//     p.draw = function() {
+//         p.background('#f3f3f3')
+//         if (api_data){
+//             p.textSize(32);
+//             p.text(api_data.key, 10, 30);
+//         }
+//     }
 
-}
+// }
 
-let myp5_3 = new p5(key_classifier, 'keyClassifierDiv');
+// let myp5_3 = new p5(key_classifier, 'p5sketch');
