@@ -33,75 +33,96 @@ if (navigator.mediaDevices === undefined) {
     })
 }
 
+//add listeners for saving video/audio
+let mic_rec = document.getElementById('mic_rec');
+let submit = document.getElementById('submit');
+let audioSave = document.getElementById('audioPlayer');
+let statusDiv = document.getElementById('statusDiv')
+let chunks = [];
+var recording = false;
+let blob = new Blob();
+var first_click = true;
 
-navigator.mediaDevices.getUserMedia(constraintObj)
-.then(function(mediaStreamObj) {
-    //add listeners for saving video/audio
-    let mic_rec = document.getElementById('mic_rec');
-    let submit = document.getElementById('submit');
-    let audioSave = document.getElementById('audioPlayer');
-    let statusDiv = document.getElementById('statusDiv')
-    let mediaRecorder = new MediaRecorder(mediaStreamObj);
-    let chunks = [];
-    var recording = false;
-    let blob = new Blob();
-    
-    uploadBlob = function(){
-        var form_data = new FormData();
-        form_data.append('file', blob);
 
-        $.ajax({
-            type: 'POST',
-            url: 'https://audiokey.net/predict_file',
-            data: form_data,
-            contentType: false,
-            cache: false,
-            processData: false,
-            success: function(data) {
-                console.log('Success!');
-                let key = data.key
-                let prob = data.probabilities[data.key]
-                statusDiv.innerHTML = "The key is ".concat(data.key).concat(' with probability ').concat(prob);
-                api_data = data;
-            },
-        })
-    }
-
-    mic_rec.addEventListener('click', (ev)=>{
-        if (recording){
-            mediaRecorder.stop();
-            recording = false
-            mic_rec.src = 'static/images/mic.svg'
-            statusDiv.innerHTML = "Finished recording. Play recording below. If you are happy with the recording, submit to determine key."
-        } else {
+mic_rec.addEventListener('click', (ev)=>{
+    if (first_click){
+        setupRecording()
+        .then(function(mediaRecorder){
             mediaRecorder.start();
             recording = true
             mic_rec.src = 'static/images/record.svg'
             statusDiv.innerHTML = "recording ... (Stop by clicking button again)"
-        }
-
-        console.log(mediaRecorder.state);
-    })
-    submit.addEventListener('click', (ev)=>{
-        statusDiv.innerHTML = "processing ..."
-        uploadBlob()
-    });
-
-    mediaRecorder.ondataavailable = function(ev) {
-        chunks.push(ev.data);
-    }
-    mediaRecorder.onstop = (ev)=>{
-        blob = new Blob(chunks, {'type' : 'audio/wav' });
-        chunks = [];
-        let audioURL = window.URL.createObjectURL(blob);
-
-        audioSave.src = audioURL;
+        })
+        .catch(function(err) { 
+            console.log(err.name, err.message); 
+        })
+        first_click = false
     }
 })
-.catch(function(err) { 
-    console.log(err.name, err.message); 
-});
 
+
+setupRecording = function(){
+
+    return navigator.mediaDevices.getUserMedia(constraintObj)
+    .then(function(mediaStreamObj) {
+
+        
+    let mediaRecorder = new MediaRecorder(mediaStreamObj);
+        uploadBlob = function(){
+            var form_data = new FormData();
+            form_data.append('file', blob);
+
+            $.ajax({
+                type: 'POST',
+                url: 'https://audiokey.net/predict_file',
+                data: form_data,
+                contentType: false,
+                cache: false,
+                processData: false,
+                success: function(data) {
+                    console.log('Success!');
+                    let key = data.key
+                    let prob = data.probabilities[data.key]
+                    statusDiv.innerHTML = "The key is ".concat(data.key).concat(' with probability ').concat(prob);
+                    api_data = data;
+                },
+            })
+        }
+
+        mic_rec.addEventListener('click', (ev)=>{
+            console.log(recording)
+            if (recording){
+                mediaRecorder.stop();
+                recording = false
+                mic_rec.src = 'static/images/mic.svg'
+                statusDiv.innerHTML = "Finished recording. Play recording below. If you are happy with the recording, submit to determine key."
+            } else {
+                mediaRecorder.start();
+                recording = true
+                mic_rec.src = 'static/images/record.svg'
+                statusDiv.innerHTML = "recording ... (Stop by clicking button again)"
+            }
+            console.log(recording)
+            console.log(mediaRecorder.state);
+        })
+        submit.addEventListener('click', (ev)=>{
+            statusDiv.innerHTML = "processing ..."
+            uploadBlob()
+        });
+
+        mediaRecorder.ondataavailable = function(ev) {
+            chunks.push(ev.data);
+        }
+        mediaRecorder.onstop = (ev)=>{
+            blob = new Blob(chunks, {'type' : 'audio/wav' });
+            chunks = [];
+            let audioURL = window.URL.createObjectURL(blob);
+
+            audioSave.src = audioURL;
+        }
+        return mediaRecorder
+    })
+}
 
 // // P5JS sketch for visualizing output from API
 // let key_classifier = function(p){
