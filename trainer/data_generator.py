@@ -94,13 +94,17 @@ class KeyDataGenerator(keras.utils.Sequence):
         cqt_file_path_list, 
         key_id_list, 
         batch_size = 32,
-        random_key_shift = True):
+        random_key_shift = True, 
+        oversample = True,
+        short = True):
 
         self.data_orig = pd.DataFrame({
             'cqt_file_path' : cqt_file_path_list,
             'key_id' : key_id_list})
 
+        self.short = short
         self.batch_size = batch_size
+        self.oversample = oversample
         self.random_key_shift = random_key_shift
         self.num_classes = 24
         self.num_channels = 1
@@ -138,29 +142,32 @@ class KeyDataGenerator(keras.utils.Sequence):
     def on_epoch_end(self):
         # # oversample smaller set.
 
-        # major = self.data_orig[self.data_orig.key_id <= 11]
-        # minor = self.data_orig[self.data_orig.key_id > 11]
+        if self.oversample:
+            major = self.data_orig[self.data_orig.key_id <= 11]
+            minor = self.data_orig[self.data_orig.key_id > 11]
 
-        # if len(minor) < len(major):
-        #     smaller = minor
-        #     larger = major
-        # else:
-        #     smaller = major
-        #     larger = minor
+            if len(minor) < len(major):
+                smaller = minor
+                larger = major
+            else:
+                smaller = major
+                larger = minor
 
-        # smaller = shuffle(smaller)
-        # difference = len(larger) - len(smaller)
-        # whole_multiplier = difference // len(smaller)
-        # #print(whole_multiplier)
-        # remaining_rows = difference % len(smaller)
-        # smaller_new = smaller.copy()
-        # for _ in range(whole_multiplier):
-        #     smaller_new = pd.concat([smaller_new, smaller])
-        # smaller_new = pd.concat([smaller_new, smaller.iloc[:remaining_rows]])
-        
-        # self.data = pd.concat([larger, smaller_new])
+            smaller = shuffle(smaller)
+            difference = len(larger) - len(smaller)
+            whole_multiplier = difference // len(smaller)
+            #print(whole_multiplier)
+            remaining_rows = difference % len(smaller)
+            smaller_new = smaller.copy()
+            for _ in range(whole_multiplier):
+                smaller_new = pd.concat([smaller_new, smaller])
+            smaller_new = pd.concat([smaller_new, smaller.iloc[:remaining_rows]])
+            
+            self.data = pd.concat([larger, smaller_new])
+            self.data = shuffle(self.data)
 
-        self.data = shuffle(self.data_orig)
+        else:
+            self.data = shuffle(self.data_orig)
     
     def _augmentation(self, X, y):
         # key shift augmentation
@@ -185,7 +192,10 @@ class KeyDataGenerator(keras.utils.Sequence):
         end_time_idx = start_time_idx + self.num_time_steps
 
         # crop in both dimensions and singleton dimension for channel
-        X = X[start_freq_idx:end_freq_idx, start_time_idx:end_time_idx, np.newaxis]
+        if self.short:
+            X = X[start_freq_idx:end_freq_idx, start_time_idx:end_time_idx, np.newaxis]
+        else:
+            X = X[start_freq_idx:end_freq_idx, :, np.newaxis]
 
         return X, y
 

@@ -70,8 +70,8 @@ if __name__ == "__main__":
     input_shape = (168, None, 1)
 
     SAVED_MODEL_PATH = 'model_large.h5'
-    #model = keras.models.load_model(SAVED_MODEL_PATH)
-    model = build_model(input_shape, complexity=20)
+    model = keras.models.load_model(SAVED_MODEL_PATH)
+    #model = build_model(input_shape, complexity=20)
 
     optimizer = keras.optimizers.Adam(learning_rate = 0.0001)
     model.compile(
@@ -88,37 +88,50 @@ if __name__ == "__main__":
     dg_train = KeyDataGenerator(
         cqt_file_path_list=df_train.cqt_file_path,
         key_id_list=df_train.key_id,
-        batch_size=32)
+        batch_size=32,
+        random_key_shift=True,
+        oversample=True,
+        short=True)
 
     df_val = df[df.subset == 'val']
     dg_val = KeyDataGenerator(
         cqt_file_path_list=df_val.cqt_file_path,
         key_id_list=df_val.key_id,
         batch_size=200,
-        random_key_shift=False)
+        random_key_shift=False,
+        oversample=False,
+        short=True)
 
     dg_val_2 = KeyDataGenerator(
         cqt_file_path_list=df_val.cqt_file_path,
         key_id_list=df_val.key_id,
-        batch_size=800,
-        random_key_shift=False)
+        batch_size=1,
+        random_key_shift=False,
+        oversample=False,
+        short=False)
 
 
-    for i in range(50):
+    for i in range(100):
+        y_val = []
+        y_val_pred = []
+        for _ in range(800):
+            X_val0, y_val0 = dg_val_2[0]
+            dg_val_2.on_epoch_end()
+            y_val_pred0 = np.argmax(model.predict(X_val0),axis=1)
+
+            y_val.append(y_val0)
+            y_val_pred.append(y_val_pred0)
+
+        conf_mat = sklearn.metrics.confusion_matrix(y_val, y_val_pred)
+        print(conf_mat)
+        model.save(SAVED_MODEL_PATH)
+        print(sklearn.metrics.accuracy_score(y_val, y_val_pred))
+
         history = model.fit_generator(
         generator = dg_train, 
         validation_data= dg_val,
         epochs=10)
 
-        X_val, y_val = dg_val_2[0]
-        dg_val_2.on_epoch_end()
-        y_val_pred = np.argmax(model.predict(X_val),axis=1)
-        # print(y_val_pred)
-        # print(y_val)
-        conf_mat = sklearn.metrics.confusion_matrix(y_val, y_val_pred)
-        print(conf_mat)
-        model.save(SAVED_MODEL_PATH)
-        #tfjs.converters.save_keras_model(model, tfjs_target_dir)
 
     # print(input_shape)
     # print(model.summary())
