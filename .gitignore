@@ -16,3 +16,4 @@ trainer/*.h5
 key_classifier.pem
 client.py
 web_app/images
+notebooks/
