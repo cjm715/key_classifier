@@ -76,4 +76,9 @@ class KeyClassifierService:
             bins_per_octave=bins_per_octave))
 
         X = cqt[np.newaxis, :, :, np.newaxis]
+        
+        # X = (X - np.mean(X))
+        # if (np.std(X) > 0.0001):
+        #     X = X/np.std(X)
+
         return X

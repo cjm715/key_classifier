@@ -10,6 +10,35 @@ from data_generator import KeyDataGenerator
 import random
 import tensorflowjs as tfjs
 
+
+KEY_ID_TO_KEY_SYMBOL_MAP = {
+    0:  'A',
+    1:  'Bb',
+    2:  'B',
+    3:  'C',
+    4:  'C#',
+    5:  'D',
+    6:  'Eb',
+    7:  'E',
+    8:  'F',
+    9:  'F#',
+    10: 'G',
+    11: 'G#',
+    12: 'Am',
+    13: 'Bbm',
+    14: 'Bm',
+    15: 'Cm',
+    16: 'C#m',
+    17: 'Dm',
+    18: 'Ebm',
+    19: 'Em',
+    20: 'Fm',
+    21: 'F#m',
+    22: 'Gm',
+    23: 'G#m'
+}
+
+
 def plot_history(history):
     fig, axs = plt.subplots(2)
 
@@ -70,8 +99,9 @@ if __name__ == "__main__":
     input_shape = (168, None, 1)
 
     SAVED_MODEL_PATH = 'model_large.h5'
-    model = keras.models.load_model(SAVED_MODEL_PATH)
-    #model = build_model(input_shape, complexity=20)
+    model = build_model(input_shape, complexity=20)
+    #model = keras.models.load_model(SAVED_MODEL_PATH)
+    model.save(SAVED_MODEL_PATH)
 
     optimizer = keras.optimizers.Adam(learning_rate = 0.0001)
     model.compile(
@@ -111,26 +141,57 @@ if __name__ == "__main__":
         short=False)
 
 
+    
+    print(f"val length: {len(df_val)}")
+    best_metric = 0
     for i in range(100):
         y_val = []
         y_val_pred = []
-        for _ in range(800):
-            X_val0, y_val0 = dg_val_2[0]
-            dg_val_2.on_epoch_end()
+        for j in range(len(df_val)):
+            X_val0, y_val0 = dg_val_2[j]
             y_val_pred0 = np.argmax(model.predict(X_val0),axis=1)
 
             y_val.append(y_val0)
             y_val_pred.append(y_val_pred0)
 
-        conf_mat = sklearn.metrics.confusion_matrix(y_val, y_val_pred)
+        dg_val_2.on_epoch_end()
+        conf_mat = sklearn.metrics.confusion_matrix(y_val, y_val_pred, labels=list(range(24)))
         print(conf_mat)
-        model.save(SAVED_MODEL_PATH)
-        print(sklearn.metrics.accuracy_score(y_val, y_val_pred))
+        # model.save(SAVED_MODEL_PATH)
+        val_acc = sklearn.metrics.accuracy_score(y_val, y_val_pred)
 
+        recall_list = []
+        for k in range(24):
+            if (sum(conf_mat[k,:]) == 0):
+                recall = 0
+            else:
+                recall = conf_mat[k,k]/sum(conf_mat[k,:])
+            key = KEY_ID_TO_KEY_SYMBOL_MAP[k]
+            print(f'key: {key} recall: {recall}')
+            recall_list.append(recall)
+
+        metric = np.mean(recall_list)
+        if metric > best_metric:
+            best_metric = metric
+            model.save(SAVED_MODEL_PATH)
+
+        print(f'val accuracy: {val_acc}')
+        print(f'mean recall : {metric}, best mean recall: {best_metric}')
+
+        model = keras.models.load_model(SAVED_MODEL_PATH)
+        optimizer = keras.optimizers.Adam(learning_rate = 0.0001)
+        
+        model.compile(
+            optimizer=optimizer,
+            loss='sparse_categorical_crossentropy',
+            metrics=['accuracy']
+            )
+
+        #class_weight = {m : 0.5 + 1 - recall_list[m] for m in range(24)}
         history = model.fit_generator(
-        generator = dg_train, 
-        validation_data= dg_val,
-        epochs=10)
+            generator = dg_train, 
+            validation_data= dg_val,
+            epochs=4)
 
 
     # print(input_shape)

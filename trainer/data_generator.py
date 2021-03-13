@@ -8,85 +8,6 @@ import tensorflow as tf
 import random 
 from sklearn.utils import shuffle
 
-# key is given in comments, value is tuple: (position ccw from A major, mode)
-POS_ON_CIRCLE_OF_FIFTHS = {
-    0:  (0, 1),  # A
-    1:  (5, 1),  # Bb
-    2:  (10, 1), # B
-    3:  (3, 1),  # C 
-    4:  (8, 1),  # Db
-    5:  (1, 1),  # D
-    6:  (6, 1),  # Eb
-    7:  (11, 1), # E
-    8:  (4, 1),  # F
-    9:  (9, 1),  # F#
-    10: (2, 1),  # G
-    11: (7, 1),  # Ab
-    12: (3, 0),  # Am
-    13: (8, 0),  # Bbm
-    14: (1, 0), # Bm
-    15: (6, 0),  # Cm
-    16: (11, 0),  # C#m
-    17: (4, 0),  # Dm
-    18: (9, 0),  # Ebm
-    19: (2, 0), # Em
-    20: (7, 0),  # Fm
-    21: (0, 0),  # F#m
-    22: (5, 0),  # Gm
-    23: (10, 0)   # Abm
-}
-
-
-KEY_SYMBOL_TO_KEY_ID_MAP = {
-    'A'   : 0,
-    'Bb'  : 1,
-    'B'   : 2,
-    'C'   : 3,
-    'C#'  : 4,
-    'Db'  : 4, # duplicate key_id: Db == C#
-    'D'   : 5,  
-    'Eb'  : 6,
-    'E'   : 7,
-    'F'   : 8,
-    'F#'  : 9,
-    'Gb'  : 9,
-    'G'   : 10,
-    'G#'  : 11,
-    'Ab'  : 11, # duplicate key_id: Ab == G#
-    'Am'  : 12,
-    'Bbm' : 13,
-    'Bm'  : 14,
-    'Cm'  : 15,
-    'C#m' : 16,
-    'Dbm' : 16, # duplicate key_id: Db == C#
-    'Dm'  : 17,
-    'Ebm' : 18,
-    'Em'  : 19,
-    'Fm'  : 20,
-    'F#m' : 21,
-    'Gbm' : 21,
-    'Gm'  : 22,
-    'G#m' : 23,
-    'Abm' : 23 # duplicate key_id: Ab == G#
-}
-
-# ccw from A
-CIRCLE_OF_FIFTHS_MAJOR = ['A' , 'D', 'G', 'C', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'B',  'E']
-CIRCLE_OF_FIFTHS_MINOR = ['Gb', 'B', 'E', 'A', 'D', 'G',   'C',  'F', 'Bb', 'Eb', 'Ab', 'Db']
-def encode(y):
-    pos_on_circle_of_5ths_relative_to_A_ccw, mode = POS_ON_CIRCLE_OF_FIFTHS[y]
-    theta = pos_on_circle_of_5ths_relative_to_A_ccw * 2*np.pi/12
-    return np.cos(theta), np.sin(theta), mode
-
-def decode(z1, z2, mode):
-    angles = [2*np.pi/12*i for i in range(12)]
-    clock_pos = np.argmin([(z1 - np.cos(angle))**2 + (z2 - np.sin(angle)) **2 
-        for angle in angles])
-    if mode == 1:
-        return KEY_SYMBOL_TO_KEY_ID_MAP[CIRCLE_OF_FIFTHS_MAJOR[clock_pos]]
-    else:
-        return KEY_SYMBOL_TO_KEY_ID_MAP[CIRCLE_OF_FIFTHS_MINOR[clock_pos] +'m']
-
 
 class KeyDataGenerator(keras.utils.Sequence):
     def __init__(
@@ -111,7 +32,7 @@ class KeyDataGenerator(keras.utils.Sequence):
         self.bins_per_semitone = 2
         self.octaves = 7
         self.notes_per_octave = 12
-        self.num_time_steps = 70 # since ~0.2 secs per time step to get 14 sec clip.
+        self.num_time_steps = 90 # ~0.2 secs per time step 
         self.num_freq_bins = self.octaves * self.notes_per_octave * self.bins_per_semitone
         self.dim = (self.num_freq_bins, self.num_time_steps)
 
@@ -197,46 +118,9 @@ class KeyDataGenerator(keras.utils.Sequence):
         else:
             X = X[start_freq_idx:end_freq_idx, :, np.newaxis]
 
+        # X = (X - np.mean(X))
+        # if (np.std(X) > 0.0001):
+        #     X = X/np.std(X)
+
         return X, y
 
-
-
-def load_val_data(
-    cqt_file_path_list, 
-    key_id_list, 
-    num_freq_bins=168,
-    num_time_steps=70):
-
-    cqt_file_path_list = list(cqt_file_path_list)
-    X = []
-    for i in range(len(cqt_file_path_list)):
-        cqt_file_path = cqt_file_path_list[i]
-        Xsample = np.load(cqt_file_path)
-        
-        start_freq_idx = 8 # note E1
-        end_freq_idx = start_freq_idx + num_freq_bins
-
-        # crop window in time
-        orig_num_time_steps = Xsample.shape[1]
-        max_start_time_idx = orig_num_time_steps - num_time_steps
-        if max_start_time_idx < 0:
-            continue
-        start_time_idx = random.randint(0, max_start_time_idx)
-        end_time_idx = start_time_idx + num_time_steps
-
-        # crop in both dimensions and singleton dimension for channel
-        X.append(Xsample[
-            start_freq_idx:end_freq_idx,
-            start_time_idx:end_time_idx, 
-            np.newaxis])
-
-    
-    X = np.stack(X, axis=0)
-    y = np.array(key_id_list)
-
-    return X, y
-
-if __name__ == "__main__":
-    for y in range(24):
-        z1, z2, mode = encode(y)
-        print(y, encode(y),  decode(z1, z2, mode))
