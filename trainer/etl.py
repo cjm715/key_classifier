@@ -394,8 +394,7 @@ def save_cqt_mtg():
             df.loc[idx, 'cqt_file_path'] = None
         else:
             df.loc[idx, 'cqt_file_path'] = cqt_file_path
-
-        np.save(cqt_file_path, cqt)
+            np.save(cqt_file_path, cqt)
 
     df = df.dropna()
     df['source'] = 'mtg'
