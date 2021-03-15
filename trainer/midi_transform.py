@@ -15,6 +15,7 @@ import shutil
 from sklearn.model_selection import train_test_split
 import random
 import copy
+import sys
 
 DATA_PATH = 'data/'
 SAMPLE_RATE = 22050
@@ -25,7 +26,10 @@ BINS_PER_SEMITONE = 2
 BINS_PER_OCTAVE = 12 * BINS_PER_SEMITONE
 MIN_TIME_STEPS = 125
 
+MODEL_DATA_PATH = DATA_PATH + 'model_data_midi/'
+
 # inputs
+MIDI_AND_ID_FILE = MODEL_DATA_PATH + 'midi_and_id.csv'
 SOUND_FONT_DIRECTORY = DATA_PATH + 'sound_fonts/' 
 
 LMD_KEY_TRAIN_DATASET = DATA_PATH + 'keys/lmd_key_train.tsv'
@@ -33,9 +37,6 @@ LMD_KEY_VAL_DATASET = DATA_PATH + 'keys/lmd_key_valid.tsv'
 LMD_KEY_HOLDOUT_DATASET = DATA_PATH + 'keys/lmd_key_test.tsv'
 LMD_MIDI_DATASET = DATA_PATH + 'lmd_matched/'
 
-# output 
-MODEL_DATA_PATH = DATA_PATH + 'model_data_midi/'
-METADATA_FILE = MODEL_DATA_PATH + 'metadata.csv'
 
 KEY_ID_TO_KEY_SYMBOL_MAP = {
     0:  'A',
@@ -167,16 +168,17 @@ KEY_SYMBOL_TO_KEY_ID_MAP = {
 def get_cqt(audio_file_path):
     try:
         signal, _ = librosa.load(audio_file_path, sr=SAMPLE_RATE)
+        cqt = np.abs(librosa.cqt(
+            signal, 
+            sr=SAMPLE_RATE, 
+            hop_length=HOP_LENGTH,
+            fmin=librosa.note_to_hz('C1'),
+            n_bins=BINS_PER_OCTAVE * OCTAVES,
+            bins_per_octave=BINS_PER_OCTAVE))
     except:
         print(f"WARNING: {audio_file_path} is corrupt or not found")
         return None
-    cqt = np.abs(librosa.cqt(
-        signal, 
-        sr=SAMPLE_RATE, 
-        hop_length=HOP_LENGTH,
-        fmin=librosa.note_to_hz('C1'),
-        n_bins=BINS_PER_OCTAVE * OCTAVES,
-        bins_per_octave=BINS_PER_OCTAVE))
+
     return cqt
 
 def select_random_sound_font_file(sound_font_directory = '../data/sound_fonts/'):
@@ -236,20 +238,16 @@ def get_tonic_mode(row):
     tonic, mode = KEY_ID_TO_TONIC_MODE_TUPLE[row['key_id']]
     return pd.Series([tonic, mode])
 
-def save_cqt_lmd():
+def save_cqt_lmd(midi_df, process_id, meta_file):
+
+    filt = midi_df['process_id'] == process_id
+    midi_df = midi_df[filt]
+
     # dictionary to store data
     subsets = [
         ('train', LMD_KEY_TRAIN_DATASET),
         ('val', LMD_KEY_VAL_DATASET),
         ('holdout', LMD_KEY_HOLDOUT_DATASET)]
-
-    # create midi dataframe with midi file path and file_id
-    midi_data = {'midi_fp': []}
-    for x in os.walk(LMD_MIDI_DATASET):
-        for y in glob(os.path.join(x[0], '*.mid')):
-            midi_data['midi_fp'].append(y)
-    midi_df = pd.DataFrame(midi_data)
-    midi_df['file_id'] = midi_df['midi_fp'].map(lambda y: y.split('/')[-2])
 
     file_num = 0
 
@@ -269,103 +267,110 @@ def save_cqt_lmd():
 
         file_num = 0
         for i in tqdm(range(len(orig_df))):
-        #for i in tqdm(range(1)):
+
+            # --- COMPUTE ORIG VERSION
+            
+            file_num += 1
+
             # extract info from row
-            midi_row = orig_df.iloc[[i]].reset_index(drop=True)
-            key_id = int(midi_row.loc[0,'key_id'])
-            key = midi_row.loc[0,'key']
-            tonic = midi_row.loc[0,'tonic']
-            mode = midi_row.loc[0,'mode']
-            midi_fp = midi_row.loc[0,'midi_fp']
+            orig_row = orig_df.iloc[[i]].reset_index(drop=True)
+            key_id = int(orig_row.loc[0,'key_id'])
+            key = orig_row.loc[0,'key']
+            tonic = orig_row.loc[0,'tonic']
+            mode = orig_row.loc[0,'mode']
+            midi_fp = orig_row.loc[0,'midi_fp']
 
             # convert orig midi to wav and save file
             sound_font = select_random_sound_font_file(SOUND_FONT_DIRECTORY)
-
-            wav_fp = MODEL_DATA_PATH + f'lmd_midi_{subset}/{file_num}_{key_id}.wav'
+            wav_fp = MODEL_DATA_PATH + f'lmd_midi_{subset}/p{process_id}_{file_num}_{key_id}.wav'
             convert_midi_to_wav(midi_fp, wav_fp, sound_font)
 
-            # calculate cqt and save if valid
+            # calculate cqt, remove wav, and save if valid
             cqt = get_cqt(wav_fp)
-            cqt_file_path = MODEL_DATA_PATH + f'lmd_midi_{subset}/{file_num}_{key_id}.npy'
-            if cqt is None:
-                midi_row.loc[0,'cqt_file_path'] = None
-            elif cqt.shape[1] < MIN_TIME_STEPS:
-                midi_row.loc[0,'cqt_file_path'] = None
+            os.remove(wav_fp)
+            if (cqt is None) or (cqt.shape[1] < MIN_TIME_STEPS):
+                Warning('cqt is not valid')
+                continue
+            
+            # save cqt info and file
+            cqt_file_path = MODEL_DATA_PATH + f'lmd_midi_{subset}/p{process_id}_{file_num}_{key_id}.npy'
+            orig_row.loc[0, 'cqt_file_path'] = cqt_file_path
+            np.save(cqt_file_path, cqt)
+
+            # add record to metadata dataframe
+            if df is None:
+                df = orig_row
             else:
-                midi_row.loc[0,'cqt_file_path'] = cqt_file_path
-                np.save(cqt_file_path, cqt)
-                if df is None:
-                    df = midi_row
-                else:
-                    df = pd.concat([df, midi_row])
+                df = pd.concat([df, orig_row])
+
+            # view results
+            print(orig_row.iloc[0])
+
+
+            # --- COMPUTE PARALLEL VERSION
+            
             
             file_num += 1
-            os.remove(wav_fp)
-            print(midi_row)
-
-            par_row = midi_row.copy()
+            par_row = orig_row.copy()
             par_row['version'] = 'parallel'
+
             # convert orig midi to parallel mode
-            orig = converter.parse(midi_fp)
-            post, post_mode = switch_modes(orig, mode, tonic)
+            try:
+                orig = converter.parse(midi_fp)
+                post, post_mode = switch_modes(orig, mode, tonic)
+            except:
+                Warning('conversion to parallel failed with music21')
+                continue
+            
             
             # calculate key variables and save
             key = tonic + ' ' + post_mode
             key_id = KEY_SYMBOL_TO_KEY_ID_MAP[key]
             key = KEY_ID_TO_KEY_SYMBOL_MAP[key_id]
-
             par_row.loc[0,'key'] = key
             par_row.loc[0,'key_id'] = int(key_id)
             par_row.loc[0,'tonic'] = tonic
             par_row.loc[0,'mode'] = post_mode
 
-
-            parallel_midi_fp = MODEL_DATA_PATH + f'lmd_midi_{subset}/{file_num}_{key_id}.mid'
+            # save midi file of parallel version 
+            parallel_midi_fp = MODEL_DATA_PATH + f'lmd_midi_{subset}/p{process_id}_{file_num}_{key_id}.mid'
             par_row['midi_fp'] = parallel_midi_fp          
             post.write('midi', parallel_midi_fp)
 
+            # create wav file of parallel version
             sound_font = select_random_sound_font_file(SOUND_FONT_DIRECTORY)
+            parallel_wav_fp = MODEL_DATA_PATH + f'lmd_midi_{subset}/p{process_id}_{file_num}_{key_id}.wav'
+            try:
+                convert_midi_to_wav(parallel_midi_fp, parallel_wav_fp, sound_font)
+            except:
+                Warning('could not convert midi to wav')
+                continue
 
-            parallel_wav_fp = MODEL_DATA_PATH + f'lmd_midi_{subset}/{file_num}_{key_id}.wav'
-            convert_midi_to_wav(parallel_midi_fp, parallel_wav_fp, sound_font)
-
-            # calculate cqt and save if valid
+            # calculate cqt from wav, remove wav, and save if valid
             cqt = get_cqt(parallel_wav_fp)
-            if cqt is None:
-                par_row.loc[0,'cqt_file_path'] = None
-            elif cqt.shape[1] < MIN_TIME_STEPS:
-                par_row.loc[0,'cqt_file_path'] = None
-            else:
-                cqt_file_path = MODEL_DATA_PATH + f'lmd_midi_{subset}/{file_num}_{key_id}.npy'
-                par_row.loc[0, 'cqt_file_path'] = cqt_file_path
-                np.save(cqt_file_path, cqt)
-                if df is None:
-                    df = par_row
-                else:
-                    df = pd.concat([df, par_row])
-            file_num += 1
             os.remove(parallel_wav_fp)
-            print(par_row)
+            if (cqt is None) or (cqt.shape[1] < MIN_TIME_STEPS):
+                Warning('cqt is not valid')
+                continue
+            cqt_file_path = MODEL_DATA_PATH + f'lmd_midi_{subset}/p{process_id}_{file_num}_{key_id}.npy'
+            par_row.loc[0, 'cqt_file_path'] = cqt_file_path
+            np.save(cqt_file_path, cqt)
+
+            # add record to metadata dataframe
+            if df is None:
+                df = par_row
+            else:
+                df = pd.concat([df, par_row])
+
+            # view record
+            print(par_row.iloc[0])
 
             #df = df.dropna()
             df['key_id'] = df['key_id'].astype(int)
             df['source'] = 'lmd_midi'
-            df.to_csv(METADATA_FILE, index=False)
+            df.to_csv(meta_file, index=False)
 
-
-
-# removes all model data
-shutil.rmtree(MODEL_DATA_PATH)
-
-# creates folder structure
-data_source_list = ['lmd_midi']
-subset_list = ['train', 'val', 'holdout', 'test']
-folders_to_create = [
-    MODEL_DATA_PATH + f'{data_source}_{subset}'
-    for data_source in data_source_list
-    for subset in subset_list]
-for folder in folders_to_create:
-    os.makedirs(folder)
-
-
-save_cqt_lmd()  
+process_id = int(sys.argv[1])
+midi_df = pd.read_csv(MIDI_AND_ID_FILE)
+meta_file = MODEL_DATA_PATH + f'metafile_p{process_id}.csv'
+save_cqt_lmd(midi_df, process_id, meta_file)  
