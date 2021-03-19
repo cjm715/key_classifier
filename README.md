@@ -18,8 +18,3 @@ I also added spectral-focused layers at beginning of network as used in this pap
 # The app
 
 <a href="https://audiokey.net">audiokey.net</a>.  Feel free to try it out on your own via your microphone. You can also directly upload files to the backend api here: <a href="https://audiokey.net/apidocs/">audiokey.net/apidocs/</a>.
-
-
-<!-- # Resources
-- <a href="https://www.youtube.com/channel/UCZPFjMe1uRSirmSpznqvJfQ">Sound of AI youtube</a>
-- <a href="https://musicstudent101.com/"> Music student 101 </a> -->
