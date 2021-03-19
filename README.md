@@ -13,7 +13,7 @@ I implemented a CNN very close to the architecture mentioned in this paper:
 - <a href='https://arxiv.org/abs/1808.05340'>Filip Korzeniowski and Gerhard Widmer, Genre-Agnostic Key Classification With Convolutional Neural Networks</a>
 
 I also added spectral-focused layers at beginning of network as used in this paper:
-- <a href='http://smc2019.uma.es/articles/P1/P1_07_SMC2019_paper.pdf'>Musical Tempo and Key Estimation using Convolutional Neural Networks with Directional Filters Hendrik Schreiber Meinard Müller</a>
+- <a href='http://smc2019.uma.es/articles/P1/P1_07_SMC2019_paper.pdf'>Hendrik Schreiber and Meinard Müller, Musical Tempo and Key Estimation using Convolutional Neural Networks with Directional Filters</a>
 
 # The app
 
