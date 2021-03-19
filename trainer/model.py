@@ -99,8 +99,8 @@ if __name__ == "__main__":
     input_shape = (168, None, 1)
 
     SAVED_MODEL_PATH = 'model_large.h5'
-    model = build_model(input_shape, complexity=20)
-    #model = keras.models.load_model(SAVED_MODEL_PATH)
+    #model = build_model(input_shape, complexity=20)
+    model = keras.models.load_model(SAVED_MODEL_PATH)
     model.save(SAVED_MODEL_PATH)
 
     optimizer = keras.optimizers.Adam(learning_rate = 0.0001)
@@ -111,19 +111,26 @@ if __name__ == "__main__":
         )
 
     print(model.summary())
-    meta_data_path = 'data/model_data/metadata.csv'
+    meta_data_path = 'data/model_metadata.csv'
+
+    # df = pd.read_csv(meta_data_path)
+    # df_train = df[df.source == 'lmd_midi']
+    # df_train = df_train[(df_train.subset == 'train') & (df_train.version == 'parallel')]
 
     df = pd.read_csv(meta_data_path)
-    df_train = df[df.subset == 'train']
+    df_train = df[((df.subset == 'train') | (df.source == 'lmd')) & (df.version != 'parallel')]
+
     dg_train = KeyDataGenerator(
         cqt_file_path_list=df_train.cqt_file_path,
         key_id_list=df_train.key_id,
-        batch_size=32,
+        batch_size=64,
         random_key_shift=True,
         oversample=True,
-        short=True)
+        short=True,
+        oversample_fraction = 0.3)
 
-    df_val = df[df.subset == 'val']
+    df_val = df[((df.subset == 'val') | (df.subset == 'test')) & ((df.source != 'lmd') & (df.source != 'lmd_midi'))]
+    #df_val = df[df.subset == 'train'].sample(1000)
     dg_val = KeyDataGenerator(
         cqt_file_path_list=df_val.cqt_file_path,
         key_id_list=df_val.key_id,
@@ -178,14 +185,14 @@ if __name__ == "__main__":
         print(f'val accuracy: {val_acc}')
         print(f'mean recall : {metric}, best mean recall: {best_metric}')
 
-        model = keras.models.load_model(SAVED_MODEL_PATH)
-        optimizer = keras.optimizers.Adam(learning_rate = 0.0001)
+        # model = keras.models.load_model(SAVED_MODEL_PATH)
+        # optimizer = keras.optimizers.Adam(learning_rate = 0.0001)
         
-        model.compile(
-            optimizer=optimizer,
-            loss='sparse_categorical_crossentropy',
-            metrics=['accuracy']
-            )
+        # model.compile(
+        #     optimizer=optimizer,
+        #     loss='sparse_categorical_crossentropy',
+        #     metrics=['accuracy']
+        #     )
 
         #class_weight = {m : 0.5 + 1 - recall_list[m] for m in range(24)}
         history = model.fit_generator(

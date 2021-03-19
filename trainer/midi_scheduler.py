@@ -19,15 +19,11 @@ import copy
 DATA_PATH = 'data/'
 NUM_PROCESSES = 40
 
-# inputs
-LMD_KEY_TRAIN_DATASET = DATA_PATH + 'keys/lmd_key_train.tsv'
-LMD_KEY_VAL_DATASET = DATA_PATH + 'keys/lmd_key_valid.tsv'
-LMD_KEY_HOLDOUT_DATASET = DATA_PATH + 'keys/lmd_key_test.tsv'
-LMD_MIDI_DATASET = DATA_PATH + 'lmd_matched/'
+LMD_MIDI_DATASET = DATA_PATH + 'lmd_full'
 
 # output 
 MODEL_DATA_PATH = DATA_PATH + 'model_data_midi/'
-MIDI_AND_ID_FILE = MODEL_DATA_PATH + 'midi_and_id.csv'
+MIDI_SCHEDULER = MODEL_DATA_PATH + 'midi_scheduler.csv'
 LOG_DIR = MODEL_DATA_PATH + 'logs/'
 
 if not os.path.exists(MODEL_DATA_PATH):
@@ -38,7 +34,7 @@ shutil.rmtree(MODEL_DATA_PATH)
 
 # creates folder structure
 data_source_list = ['lmd_midi']
-subset_list = ['train', 'val', 'holdout', 'test']
+subset_list = ['train']
 folders_to_create = [
     MODEL_DATA_PATH + f'{data_source}_{subset}'
     for data_source in data_source_list
@@ -53,7 +49,6 @@ for x in os.walk(LMD_MIDI_DATASET):
     for y in glob(os.path.join(x[0], '*.mid')):
         midi_data['midi_fp'].append(y)
 midi_df = pd.DataFrame(midi_data)
-midi_df['file_id'] = midi_df['midi_fp'].map(lambda y: y.split('/')[-2])
 midi_df.reset_index(drop=True)
 
 num_midi_files_per_process = len(midi_df) // NUM_PROCESSES
@@ -68,7 +63,7 @@ for process_id in range(NUM_PROCESSES):
 
     midi_df.loc[start_idx:end_idx, 'process_id'] = process_id
 
-midi_df.to_csv(MIDI_AND_ID_FILE, index=False)
+midi_df.to_csv(MIDI_SCHEDULER, index=False)
 
 
 for process_id in range(NUM_PROCESSES):

@@ -17,7 +17,8 @@ class KeyDataGenerator(keras.utils.Sequence):
         batch_size = 32,
         random_key_shift = True, 
         oversample = True,
-        short = True):
+        short = True,
+        oversample_fraction = 1.0):
 
         self.data_orig = pd.DataFrame({
             'cqt_file_path' : cqt_file_path_list,
@@ -26,6 +27,7 @@ class KeyDataGenerator(keras.utils.Sequence):
         self.short = short
         self.batch_size = batch_size
         self.oversample = oversample
+        self.oversample_fraction = oversample_fraction
         self.random_key_shift = random_key_shift
         self.num_classes = 24
         self.num_channels = 1
@@ -75,7 +77,8 @@ class KeyDataGenerator(keras.utils.Sequence):
                 larger = minor
 
             smaller = shuffle(smaller)
-            difference = len(larger) - len(smaller)
+            full_difference = len(larger) - len(smaller)
+            difference = int(self.oversample_fraction * full_difference)
             whole_multiplier = difference // len(smaller)
             #print(whole_multiplier)
             remaining_rows = difference % len(smaller)
@@ -123,4 +126,3 @@ class KeyDataGenerator(keras.utils.Sequence):
         #     X = X/np.std(X)
 
         return X, y
-
