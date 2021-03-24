@@ -92,7 +92,9 @@ canvas {
     margin-left: auto;
     margin-right: auto;
 }
-
+.nav a {
+    color: #1E90FF
+}
 
 @media (min-width: 400px){
     .logo img {
