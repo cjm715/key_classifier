@@ -3,6 +3,7 @@
 var api_data;
 
 
+
 // AUDIO RECORDING AND QUERYING API
 let constraintObj = { 
     audio: true, 
@@ -50,7 +51,7 @@ mic_rec.addEventListener('click', (ev)=>{
     if (first_click){
         setupRecording()
         .then(function(mediaRecorder){
-            mediaRecorder.start();
+            mediaRecorder.start(100);
             recording = true
             mic_rec.src = 'static/images/record.svg'
 
@@ -71,10 +72,8 @@ mic_rec.addEventListener('click', (ev)=>{
 setupRecording = function(){
 
     return navigator.mediaDevices.getUserMedia(constraintObj)
-    .then(function(mediaStreamObj) {
-
-        
-    let mediaRecorder = new MediaRecorder(mediaStreamObj);
+    .then(function(mediaStreamObj) {        
+        let mediaRecorder = new MediaRecorder(mediaStreamObj);
         uploadBlob = function(){
             var form_data = new FormData();
             form_data.append('file', blob);
@@ -111,7 +110,7 @@ setupRecording = function(){
                     $('#statusDiv').html(newHTML);
                 } );
             } else {
-                mediaRecorder.start();
+                mediaRecorder.start(100);
                 recording = true
                 mic_rec.src = 'static/images/record.svg'
                 
@@ -134,13 +133,11 @@ setupRecording = function(){
 
         mediaRecorder.ondataavailable = function(ev) {
             chunks.push(ev.data);
-            console.log('pushed');
         }
         mediaRecorder.onstop = (ev)=>{
             blob = new Blob(chunks, {'type' : 'audio/wav' });
             chunks = [];
             let audioURL = window.URL.createObjectURL(blob);
-
             audioSave.src = audioURL;
         }
         return mediaRecorder
