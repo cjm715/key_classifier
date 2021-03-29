@@ -10,6 +10,7 @@ let constraintObj = {
 }; 
 
 if (navigator.mediaDevices === undefined) {
+    console.log('mediaDevices is undefined')
     navigator.mediaDevices = {};
     navigator.mediaDevices.getUserMedia = function(constraintObj) {
         let getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
@@ -21,6 +22,7 @@ if (navigator.mediaDevices === undefined) {
         });
     }
 }else{
+    console.log('mediaDevices is defined')
     navigator.mediaDevices.enumerateDevices()
     .then(devices => {
         devices.forEach(device=>{
@@ -112,6 +114,7 @@ setupRecording = function(){
 
         mediaRecorder.ondataavailable = function(ev) {
             chunks.push(ev.data);
+            console.log('pushed');
         }
         mediaRecorder.onstop = (ev)=>{
             blob = new Blob(chunks, {'type' : 'audio/wav' });
