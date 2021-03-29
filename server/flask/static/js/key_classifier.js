@@ -53,8 +53,12 @@ mic_rec.addEventListener('click', (ev)=>{
             mediaRecorder.start();
             recording = true
             mic_rec.src = 'static/images/record.svg'
-            document.getElementById('statusDiv').textContent = ""
-            document.getElementById('statusDiv').textContent = "recording ... (Stop by clicking button again)"
+
+            let newHTML = "recording ... (Stop by clicking button again)";
+            $(document).ready( function() {
+                $('#statusDiv').html(newHTML);
+            } 
+
         })
         .catch(function(err) { 
             console.log(err.name, err.message); 
@@ -86,8 +90,10 @@ setupRecording = function(){
                     console.log('Success!');
                     let key = data.key
                     let prob = data.probabilities[data.key]
-                    document.getElementById('statusDiv').textContent = ""
-                    document.getElementById('statusDiv').textContent = "The key is ".concat(data.key).concat(' with probability ').concat(prob);
+                    let newHTML = "The key is ".concat(data.key).concat(' with probability ').concat(prob);
+                    $(document).ready( function() {
+                        $('#statusDiv').html(newHTML);
+                    } );
                     api_data = data;
                 },
             })
@@ -99,21 +105,30 @@ setupRecording = function(){
                 mediaRecorder.stop();
                 recording = false
                 mic_rec.src = 'static/images/mic.svg'
-                document.getElementById('statusDiv').textContent = ""
-                document.getElementById('statusDiv').textContent = "Finished recording. Play recording below. If you are happy with the recording, submit to determine key."
+
+                let newHTML =  "Finished recording. Play recording below. If you are happy with the recording, submit to determine key.";
+                $(document).ready( function() {
+                    $('#statusDiv').html(newHTML);
+                } );
             } else {
                 mediaRecorder.start();
                 recording = true
                 mic_rec.src = 'static/images/record.svg'
-                document.getElementById('statusDiv').textContent = ""
-                document.getElementById('statusDiv').textContent = "recording ... (Stop by clicking button again)"
+                
+                let newHTML = "recording ... (Stop by clicking button again)";
+                $(document).ready( function() {
+                    $('#statusDiv').html(newHTML);
+                } );
             }
             console.log(recording)
             console.log(mediaRecorder.state);
         })
         submit.addEventListener('click', (ev)=>{
-            document.getElementById('statusDiv').textContent = ""
-            document.getElementById('statusDiv').textContent = "processing ..."
+            let newHTML = "processing ...";
+            $(document).ready( function() {
+                $('#statusDiv').html(newHTML);
+            } );
+
             uploadBlob()
         });
 
