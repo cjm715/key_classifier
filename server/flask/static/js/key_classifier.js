@@ -53,7 +53,8 @@ mic_rec.addEventListener('click', (ev)=>{
             mediaRecorder.start();
             recording = true
             mic_rec.src = 'static/images/record.svg'
-            statusDiv.textContent = "recording ... (Stop by clicking button again)"
+            //document.getElementById('statusDiv').innerHTML = ""
+            document.getElementById('statusDiv').innerHTML = "recording ... (Stop by clicking button again)"
         })
         .catch(function(err) { 
             console.log(err.name, err.message); 
@@ -85,7 +86,7 @@ setupRecording = function(){
                     console.log('Success!');
                     let key = data.key
                     let prob = data.probabilities[data.key]
-                    statusDiv.textContent = "The key is ".concat(data.key).concat(' with probability ').concat(prob);
+                    document.getElementById('statusDiv').innerHTML = "The key is ".concat(data.key).concat(' with probability ').concat(prob);
                     api_data = data;
                 },
             })
@@ -97,18 +98,18 @@ setupRecording = function(){
                 mediaRecorder.stop();
                 recording = false
                 mic_rec.src = 'static/images/mic.svg'
-                statusDiv.textContent = "Finished recording. Play recording below. If you are happy with the recording, submit to determine key."
+                document.getElementById('statusDiv').innerHTML = "Finished recording. Play recording below. If you are happy with the recording, submit to determine key."
             } else {
                 mediaRecorder.start();
                 recording = true
                 mic_rec.src = 'static/images/record.svg'
-                statusDiv.textContent = "recording ... (Stop by clicking button again)"
+                document.getElementById('statusDiv').innerHTML = "recording ... (Stop by clicking button again)"
             }
             console.log(recording)
             console.log(mediaRecorder.state);
         })
         submit.addEventListener('click', (ev)=>{
-            statusDiv.textContent = "processing ..."
+            document.getElementById('statusDiv').innerHTML = "processing ..."
             uploadBlob()
         });
 
