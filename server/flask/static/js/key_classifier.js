@@ -57,7 +57,7 @@ mic_rec.addEventListener('click', (ev)=>{
             let newHTML = "recording ... (Stop by clicking button again)";
             $(document).ready( function() {
                 $('#statusDiv').html(newHTML);
-            } 
+            } );
 
         })
         .catch(function(err) { 
