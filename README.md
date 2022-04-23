@@ -14,7 +14,3 @@ I implemented a CNN very close to the architecture mentioned in this paper:
 
 I also added spectral-focused layers at beginning of network as used in this paper:
 - <a href='http://smc2019.uma.es/articles/P1/P1_07_SMC2019_paper.pdf'>Hendrik Schreiber and Meinard Müller, Musical Tempo and Key Estimation using Convolutional Neural Networks with Directional Filters</a>
-
-# The app
-
-<a href="https://audiokey.net">audiokey.net</a>.  Feel free to try it out on your own via your microphone. You can also directly upload files to the backend api here: <a href="https://audiokey.net/apidocs/">audiokey.net/apidocs/</a>.
